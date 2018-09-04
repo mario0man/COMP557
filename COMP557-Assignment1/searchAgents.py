@@ -295,6 +295,8 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
+        return (self.startingPosition, 
+            tuple([True if self.startingPosition == corner else False for corner in self.corners]))
         util.raiseNotDefined()
 
     def isGoalState(self, state):
