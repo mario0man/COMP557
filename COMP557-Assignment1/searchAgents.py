@@ -333,7 +333,6 @@ class CornersProblem(search.SearchProblem):
             nextx, nexty = int(x + dx), int(y + dy) 
             hitsWall = self.walls[nextx][nexty]
             if not hitsWall:
-
                 successors.append((
                     ((nextx, nexty), 
                         tuple([state[1][i] or (nextx, nexty) == self.corners[i] for i in range(len(self.corners))])),
