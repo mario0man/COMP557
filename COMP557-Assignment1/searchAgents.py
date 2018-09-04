@@ -521,9 +521,40 @@ def foodHeuristic(state, problem):
     Subsequent calls to this heuristic can access
     problem.heuristicInfo['wallCount']
     """
-    position, foodGrid = state
+    
     "*** YOUR CODE HERE ***"
-    return 0
+    '''
+    We can follow a similar strategy from corner search, where we found the closest corner, then the next closest, and so forth until all corners were found. 
+    Here, we could potentially use the same strategy and find the closest food, then the next closest, and so forth until all food is found. 
+    However, this approach is too focused on local optimization and fails to look at the bigger picture.
+    This approach can potentially lead us away from our goal since little consideration is given to locations and potential obstacles beyond our immediate vicinity. 
+    In other words, while such an approach may achieve a local minima, it could simultaneously be taking us further away from the global minima - the true optimal solution. 
+    Therefore, our approach must equally balance a focus on both micro and macro environments. 
+    By calculating one distance to the closest food, and then one more distance from the closest food to the farthest food away from the initial location, we can get an idea of which direction is the best to move towards in the immediate surroundings, and also a general idea of which direction the final destination might be in. 
+    This ensures we avoid local obstacles, while not losing sight of the final state we aim to be in. 
+    '''
+    initPosition, foodGrid = state
+    food = foodGrid.asList()
+    if len(food) == 0:
+        return 0
+    tempDistance = 0
+    minDistance = float('inf')
+    for piece in food:
+        tempDistance = util.manhattanDistance(initPosition, piece)
+        if tempDistance < minDistance:
+            minDistance = tempDistance 
+            newRefPosition = piece 
+    maxDistance = 0
+    for piece in food:
+        tempDistance = util.manhattanDistance(newRefPosition, piece)
+        if tempDistance > maxDistance:
+            maxDistance = tempDistance 
+    return minDistance + maxDistance
+    '''
+    expanded nodes: 8178
+    thresholds: [15000, 12000, 9000, 7000]
+    Question q7: 4/4 ###
+    '''
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
