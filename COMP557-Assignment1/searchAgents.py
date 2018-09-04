@@ -373,7 +373,6 @@ def cornersHeuristic(state, problem):
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
-
     '''
     The objective here is to visit all 4 corners on the map in the shortest cost possible. 
     There are 4! = 24 possible sequences in which Pacman could visit each of the corners. 
