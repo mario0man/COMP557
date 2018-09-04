@@ -373,8 +373,65 @@ def cornersHeuristic(state, problem):
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
 
+    '''
+    The objective here is to visit all 4 corners on the map in the shortest cost possible. 
+    There are 4! = 24 possible sequences in which Pacman could visit each of the corners. 
+    At least one of these 24 sequences will have the shortest path cost, and that is the best path for Pacman to take in order to visit all 4 corners. 
+    While a brute force method would be to calculate all 24 sequences and their path costs, the following algorithm attempts to reduce computations by picking a corner, picking only the closest corner to that one, then repeating this process until all corners have been visited. 
+    We assume that picking a farther corner is always suboptimal to picking the closest corner, although it is understood this may not always be the case. 
+    All we need to do is calculate the heuristic distance between all the corners, and between the starting point and each corner, and store them in a table from which we can retrieve them when computing the path costs of the various sequences in which the nodes can be visited. 
+    The algorithm goes as follows: 
+    1. Begin at initial location. 
+    2. Calculate manhattan distance between initial loc and each corner. Store them in table. 
+    3. Compute manhattan distance between each corner and every other one. Store in table. 
+    4. Travel to first corner and add distance to counter. 
+    5. Check table for next closest corner and add distance to counter. 
+    6. Repeat 4, 5 until all 4 nodes are visited. 
+    7. Repeat 4, 5, 6 starting at a different node each time. 
+    8. Add distance from initial loc to each of the 4 path costs calculated. 
+    9. Pick the shortest distance from the 4. 
+    '''
+    currLoc = state[0]
+    distanceTable = [[] for x in xrange(4)]
+    # Compute distances between current loc and all corners - finite if unvisited, infinite otherwise. 
+    for i in range(len(corners)):
+        thisCorner = corners[i] 
+        distanceTable[i].append(util.manhattanDistance(currLoc, thisCorner))
+        for j in range(len(corners)):
+            otherCorner = corners[j]
+            if thisCorner == otherCorner or state[1][j]:
+                distanceTable[i].append(float('inf'))
+            else: 
+                distanceTable[i].append(util.manhattanDistance(thisCorner, otherCorner))
+    # print distanceTable
+    # Compute shortest paths from each remaining corner. 
+    pathDistances = [] 
+    for i in range(len(corners)):
+        # print 'here1'
+        if state[1][i]: 
+            continue
+        else:
+            # print 'here2'
+            tempDistance = distanceTable[i][0] # initialize tempDist to currLoc-corner distance
+            numCornersVisited = sum(state[1]) + 1
+            nextCornerID = distanceTable[i][1:].index(min(distanceTable[i][1:]))
+            while numCornersVisited < len(corners): 
+                # print 'here3'
+                minSegmentDistance = min(distanceTable[nextCornerID][1:])
+                tempDistance += minSegmentDistance
+                nextCornerID = distanceTable[nextCornerID][1:].index(minSegmentDistance)
+                numCornersVisited += 1
+            pathDistances.append(tempDistance)
+    # print pathDistances     
+    # print state[1]
+    if len(pathDistances):   
+        return min(pathDistances)   
+    return 0 # Default to trivial solution
+    '''
+    path length: 106
+    PASS: Heuristic resulted in expansion of 944 nodes
+    '''
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
     def __init__(self):
