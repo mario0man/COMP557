@@ -585,29 +585,26 @@ class ClosestDotSearchAgent(SearchAgent):
         problem = AnyFoodSearchProblem(gameState)
 
         "*** YOUR CODE HERE ***"
-        # util.raiseNotDefined()
-
-        fringe = util.Queue()
-        startState = (problem.getStartState(), {})
-        fringe.push(startState)
-        explored = set([])
-    
+        '''Encode each node together with the path that was taken to get to it. 
+        Then do standard DFS with queue structure for holding unvisited nodes. 
+        '''
+        frontier = util.Queue()
+        startNode = (problem.getStartState(), [])
+        frontier.push(startNode)
+        visited = set()
         nextNode = None
-        while True : 
-            if fringe.isEmpty() :
-                return 'failure'
-            nextNode = fringe.pop()
-#         if problem.isGoalState(nextNode[0]) :
-#            return nextNode[1]
-            if not nextNode[0] in explored :
-                explored.add(nextNode[0])
+        while not frontier.isEmpty(): 
+            nextNode = frontier.pop()
+            if nextNode[0] not in visited:
+                visited.add(nextNode[0])
                 successors = problem.getSuccessors(nextNode[0])
-                for i in range( len(successors )) :
+                for successor in successors:
                     if problem.isGoalState(nextNode[0]) :
                         return nextNode[1]
                     path = list(nextNode[1])
-                    path.append(successors[i][1])
-                    fringe.push( ( successors[i][0], path ))
+                    direction = successor[1]
+                    path.append(direction)
+                    frontier.push((successor[0], path))
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
