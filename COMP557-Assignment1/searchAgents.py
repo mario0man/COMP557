@@ -295,14 +295,17 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return (self.startingPosition, 
+            tuple([True if self.startingPosition == corner else False for corner in self.corners]))
+        # util.raiseNotDefined()
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return state[1] == tuple([True]*4)
+        # util.raiseNotDefined()
 
     def getSuccessors(self, state):
         """
@@ -325,6 +328,16 @@ class CornersProblem(search.SearchProblem):
             #   hitsWall = self.walls[nextx][nexty]
 
             "*** YOUR CODE HERE ***"
+            x, y = state[0]
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy) 
+            hitsWall = self.walls[nextx][nexty]
+            if not hitsWall:
+                successors.append((
+                    ((nextx, nexty), 
+                        tuple([state[1][i] or (nextx, nexty) == self.corners[i] for i in range(len(self.corners))])),
+                    action, 1))
+
 
         self._expanded += 1 # DO NOT CHANGE
         return successors
@@ -360,8 +373,64 @@ def cornersHeuristic(state, problem):
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
+    '''
+    The objective here is to visit all 4 corners on the map in the shortest cost possible. 
+    There are 4! = 24 possible sequences in which Pacman could visit each of the corners. 
+    At least one of these 24 sequences will have the shortest path cost, and that is the best path for Pacman to take in order to visit all 4 corners. 
+    While a brute force method would be to calculate all 24 sequences and their path costs, the following algorithm attempts to reduce computations by picking a corner, picking only the closest corner to that one, then repeating this process until all corners have been visited. 
+    We assume that picking a farther corner is always suboptimal to picking the closest corner, although it is understood this may not always be the case. 
+    All we need to do is calculate the heuristic distance between all the corners, and between the starting point and each corner, and store them in a table from which we can retrieve them when computing the path costs of the various sequences in which the nodes can be visited. 
+    The algorithm goes as follows: 
+    1. Begin at initial location. 
+    2. Calculate manhattan distance between initial loc and each corner. Store them in table. 
+    3. Compute manhattan distance between each corner and every other one. Store in table. 
+    4. Travel to first corner and add distance to counter. 
+    5. Check table for next closest corner and add distance to counter. 
+    6. Repeat 4, 5 until all 4 nodes are visited. 
+    7. Repeat 4, 5, 6 starting at a different node each time. 
+    8. Add distance from initial loc to each of the 4 path costs calculated. 
+    9. Pick the shortest distance from the 4. 
+    '''
+    currLoc = state[0]
+    distanceTable = [[] for x in xrange(4)]
+    # Compute distances between current loc and all corners - finite if unvisited, infinite otherwise. 
+    for i in range(len(corners)):
+        thisCorner = corners[i] 
+        distanceTable[i].append(util.manhattanDistance(currLoc, thisCorner))
+        for j in range(len(corners)):
+            otherCorner = corners[j]
+            if thisCorner == otherCorner or state[1][j]:
+                distanceTable[i].append(float('inf'))
+            else: 
+                distanceTable[i].append(util.manhattanDistance(thisCorner, otherCorner))
+    # print distanceTable
+    # Compute shortest paths from each remaining corner. 
+    pathDistances = [] 
+    for i in range(len(corners)):
+        # print 'here1'
+        if state[1][i]: 
+            continue
+        else:
+            # print 'here2'
+            tempDistance = distanceTable[i][0] # initialize tempDist to currLoc-corner distance
+            numCornersVisited = sum(state[1]) + 1
+            nextCornerID = distanceTable[i][1:].index(min(distanceTable[i][1:]))
+            while numCornersVisited < len(corners): 
+                # print 'here3'
+                minSegmentDistance = min(distanceTable[nextCornerID][1:])
+                tempDistance += minSegmentDistance
+                nextCornerID = distanceTable[nextCornerID][1:].index(minSegmentDistance)
+                numCornersVisited += 1
+            pathDistances.append(tempDistance)
+    # print pathDistances     
+    # print state[1]
+    if len(pathDistances):   
+        return min(pathDistances)   
     return 0 # Default to trivial solution
-
+    '''
+    path length: 106
+    PASS: Heuristic resulted in expansion of 944 nodes
+    '''
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
     def __init__(self):
@@ -452,9 +521,40 @@ def foodHeuristic(state, problem):
     Subsequent calls to this heuristic can access
     problem.heuristicInfo['wallCount']
     """
-    position, foodGrid = state
+    
     "*** YOUR CODE HERE ***"
-    return 0
+    '''
+    We can follow a similar strategy from corner search, where we found the closest corner, then the next closest, and so forth until all corners were found. 
+    Here, we could potentially use the same strategy and find the closest food, then the next closest, and so forth until all food is found. 
+    However, this approach is too focused on local optimization and fails to look at the bigger picture.
+    This approach can potentially lead us away from our goal since little consideration is given to locations and potential obstacles beyond our immediate vicinity. 
+    In other words, while such an approach may achieve a local minima, it could simultaneously be taking us further away from the global minima - the true optimal solution. 
+    Therefore, our approach must equally balance a focus on both micro and macro environments. 
+    By calculating one distance to the closest food, and then one more distance from the closest food to the farthest food away from the initial location, we can get an idea of which direction is the best to move towards in the immediate surroundings, and also a general idea of which direction the final destination might be in. 
+    This ensures we avoid local obstacles, while not losing sight of the final state we aim to be in. 
+    '''
+    initPosition, foodGrid = state
+    food = foodGrid.asList()
+    if len(food) == 0:
+        return 0
+    tempDistance = 0
+    minDistance = float('inf')
+    for piece in food:
+        tempDistance = util.manhattanDistance(initPosition, piece)
+        if tempDistance < minDistance:
+            minDistance = tempDistance 
+            newRefPosition = piece 
+    maxDistance = 0
+    for piece in food:
+        tempDistance = util.manhattanDistance(newRefPosition, piece)
+        if tempDistance > maxDistance:
+            maxDistance = tempDistance 
+    return minDistance + maxDistance
+    '''
+    expanded nodes: 8178
+    thresholds: [15000, 12000, 9000, 7000]
+    Question q7: 4/4 ###
+    '''
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
@@ -485,7 +585,26 @@ class ClosestDotSearchAgent(SearchAgent):
         problem = AnyFoodSearchProblem(gameState)
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        '''Encode each node together with the path that was taken to get to it. 
+        Then do standard DFS with queue structure for holding unvisited nodes. 
+        '''
+        frontier = util.Queue()
+        startNode = (problem.getStartState(), [])
+        frontier.push(startNode)
+        visited = set()
+        nextNode = None
+        while not frontier.isEmpty(): 
+            nextNode = frontier.pop()
+            if nextNode[0] not in visited:
+                visited.add(nextNode[0])
+                successors = problem.getSuccessors(nextNode[0])
+                for successor in successors:
+                    if problem.isGoalState(nextNode[0]) :
+                        return nextNode[1]
+                    path = list(nextNode[1])
+                    direction = successor[1]
+                    path.append(direction)
+                    frontier.push((successor[0], path))
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
@@ -521,7 +640,8 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         x,y = state
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.food[x][y]
+        # util.raiseNotDefined()
 
 def mazeDistance(point1, point2, gameState):
     """
