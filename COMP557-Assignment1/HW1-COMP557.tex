@@ -1,0 +1,209 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+ 
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+ \usepackage[colorlinks]{hyperref}
+\usepackage{tikz-qtree}
+\usepackage{fullpage}
+\usepackage[upright]{fourier}
+\usepackage{tkz-graph}
+\usetikzlibrary{arrows}
+\thispagestyle{empty}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+ 
+\newenvironment{theorem}[2][Theorem]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{lemma}[2][Lemma]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{exercise}[2][Exercise]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{reflection}[2][Reflection]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{proposition}[2][Proposition]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{corollary}[2][Corollary]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+ 
+\begin{document}
+ \SetVertexNormal[Shape      = circle,
+                 FillColor  = orange,
+                 LineWidth  = 2pt]
+\SetUpEdge[lw         = 1.5pt,
+           color      = black,
+           labelcolor = white,
+           labeltext  = red,
+           labelstyle = {sloped,draw,text=blue}]     
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+ 
+%\renewcommand{\qedsymbol}{\filledbox}
+ 
+\title{Homework 1}%replace X with the appropriate number
+\author{%replace with your name
+COMP 557 - Articial Intelligence \\
+\\
+Afsaneh Rahbar (ar72) \\
+Linus Shih (yls2)  
+} %if necessary, replace with your course title
+ 
+\maketitle
+
+\section{Search problems with negative path costs (25 points)}
+\subsection{(5 points)}
+A path A whose first N edges might seem suboptimal in terms of edge cost may turn out to have a sufficiently high negative edge cost in its next M edges such that they offset the high edge cost of the first $N$ edges. This would cause such a path to be the optimal path in the state space. However, an algorithm that does not explore all paths would ignore this optimal path due to the initially high edge cost of the first $N$ edges. Therefore, an algorithm that would be able to recognize this hypothetical path as the optimal one is one that would have to search all paths completely in order to find the optimal one. 
+
+\subsection{(5 points)}
+This approach would work in a state space with no cycles or loops. By placing a constraint $C$ on the minimum value that any edge cost can have, we know how much any given pathâ€™s total cost can be reduced by at any given point along the traversal of that path. As long as we know the maximum depth $D$ of the state space, we know how many steps remain as we traverse down each path. Thus, at a certain step X on each path, we know that the total cost of each path can only be reduced by at most $(D - X)*C$ units (assuming that all remaining steps on all paths are of lowest possible cost $C$). We calculate the temporary optimal path as of step X and its corresponding total path cost. Any other paths that have a total path cost higher than $(D-X)*C$ compared to the temporary optimal path can be eliminated since, at this step, we know that these paths and their costs will never be able to fall below the temporary optimal path a€™s total path cost. By eliminating these paths, we allow the algorithm to avoid exploring these extraneous paths, thus improving its efficiency. However, in a state space with cycles, this approach would not work because 
+\begin{center}
+\begin{tikzpicture}
+   \Vertex[x=2 ,y=7]{S}
+   \Vertex[x=1 ,y=5]{a}
+   \Vertex[x=3 ,y=5]{b}
+   \Vertex[x=0 ,y=3]{c}
+   \Vertex[x=4 ,y=3]{d}
+   \Vertex[x=-1 ,y=1]{e}
+   \Vertex[x=1 ,y=1]{f}
+   \Vertex[x=-2 ,y=-1]{h}
+   \Vertex[x=6 ,y=1]{g}
+   \Vertex[x=2 ,y=-1]{i}
+   \Vertex[x=7 ,y=-1]{j}
+   \tikzset{EdgeStyle/.append style = {bend left}}
+      \Edge[label = $5$](S)(b)
+      \Edge[label = $1$](b)(d)
+      \Edge[label = $-1$](d)(g)      
+      \Edge[label = $-1$](g)(j) 
+      \Edge[label = $1$](c)(f) 
+      \Edge[label = $-1$](f)(i) 
+  \tikzset{EdgeStyle/.append style = {bend right}}
+      \Edge[label = $3$](S)(a)
+      \Edge[label = $2$](a)(c)
+      \Edge[label = $3$](c)(e)
+      \Edge[label = $2$](e)(h)
+\end{tikzpicture}
+\end{center}
+
+\begin{center}
+ \begin{tabular}{||c c c c c c c||} 
+ \hline
+ X & P1 & P2 & P2 & $(D-X)*C$ & Temp. Opt. Path & Path Elim.\\ [0.5ex] 
+ \hline\hline
+ 1 & 3 & 3 & 5 & -3 & P1,P2 & -\\ 
+ \hline
+ 2 & 5 & 5 & 6 & -2 & P1,P2 & -\\
+ \hline
+ 3 & 8 & 6 & 5 & -1 & P3 & P1\\
+ \hline
+ 4 & 10 & 5 & {\color{blue}4} & {\color{red}0} & P3 & P2\\[1ex] 
+ \hline
+\end{tabular}
+\end{center}
+
+In the case presented below, an optimal algorithm still needs to explore every path in the state space although we have added a condition that all edge costs be greater than or equal to some fixed cost c < 0.
+
+    
+\begin{center}
+\begin{tikzpicture}
+   \Vertex[x=2 ,y=7]{S}
+   \Vertex[x=1 ,y=5]{a}
+   \Vertex[x=3 ,y=5]{b}
+   \Vertex[x=0 ,y=3]{c}
+   \Vertex[x=4 ,y=3]{d}
+   \Vertex[x=-1 ,y=1]{e}
+   \Vertex[x=5 ,y=1]{f}
+   \Vertex[x=-2 ,y=-1]{g}
+   \Vertex[x=6 ,y=-1]{h}
+   \Vertex[x=-3 ,y=-3]{i}
+   \Vertex[x=7 ,y=-3]{j}
+   \tikzset{EdgeStyle/.append style = {bend left}}
+      \Edge[label = $1$](S)(b)
+      \Edge[label = $1$](b)(d)
+      \Edge[label = $-1$](d)(f)      
+      \Edge[label = $-1$](f)(h) 
+      \Edge[label = $-1$](h)(j) 
+      \tikzset{EdgeStyle/.append style = {bend right}}
+      \Edge[label = $0$](S)(a)
+      \Edge[label = $0$](a)(c)
+      \Edge[label = $0$](c)(e)
+      \Edge[label = $0$](e)(g)
+      \Edge[label = $0$](g)(i)      
+\end{tikzpicture}
+\end{center}
+
+\begin{center}
+ \begin{tabular}{||c c c c c||} 
+ \hline
+ X & P1 & P2 & $(D-X)*C$ & Path Elim.\\ [0.5ex] 
+ \hline\hline
+ 1 & 0 & 1 & -5 & - \\ 
+ \hline
+ 2 & 0 & 2 & -4 & -\\
+ \hline
+ 3 & 0 & 1 & -3 & -\\
+ \hline
+ 4 & 0 & 0 & -2 & -\\
+ \hline
+  5 & 0 & -1 & -1 & -\\
+ \hline
+ 6 & 0 & -2 & -2 & - \\ [1ex] 
+ \hline
+\end{tabular}
+\end{center}
+
+\subsection{(5 points)}
+Because the total path cost is negative for the cycle, then the agentâ€™s optimal behavior would be expected to continuously loop throughout the cycle infinitely. The total path cost of the cycle is negative, so it represents the most optimal path in the state space, and because it can loop on itself, an infinite loop would allow the total path cost to become $\infty*(negative$ $cycle$ $edge$ $cost)$, which would approach a total path cost of $-\infty$ over time. 
+
+\subsection{(5 points)}
+Humans do not drive around scenic loops indefinitely because doing so would eventually diminish the joy we feel from seeing the view. We get used to driving past the same scenery everyday, and we begin to ignore it because we become familiar with what it looks like. In other words, our memory of the beautiful scenery is enough to satisfy us such that we do not need to continuously go see it in person. The concept of memory would help artificial agents prevent looping when applied to state space models. By defining a data structure containing a memory of states previously visited by the agent, it will then know what other states within the model remain unexplored. Furthermore, by applying a penalty such that the reward for visiting a state is reduced if it has been previously visited, we can incentivize the agent to visit previously unexplored states instead. Such an implementation would be effective to prevent looping. 
+
+\subsection{(5 points)}
+Cycles with negative costs can be thought of as positive feedback loops. For example, when training a dog to sit, we can give it food each time it responds properly to our command for it to sit. This positive feedback/reinforcement/reward teaches the dog to repeat this behavior on command because it knows we will give it a positive reward (food) for doing so. In this manner, we establish a positive feedback loop where the cycle of the dog sitting on command is driven and reinforced by a negative cost or positive reward of food. 
+
+\section{Analyzing Search Algorithms: dynamic A* (20 points)}
+\subsection{(5 points)}
+Dynamic $A^*$ is complete on locally finite graphs with admissible and monotonic heuristics. Admissibility keeps the algorithmâ€™s cost expectations from the start to the goal within a finite limit and prevents it from overshooting the goal. If it overshoots the goal, the algorithm will fail to return a path because it will continue its search and not terminate. Monotonicity ensures that consistent progress is made towards the goal and that no regression or backtracking occurs, which prevents looping and non-terminating behavior. With these conditions, dynamic $A^*$ will always return a path if there is one from the start to the goal, or else return none. In other words, it will always terminate while giving a definite answer (yes there is a path or no there is none).
+
+If a path from start state S to goal state G exists, it will be constructed. If no path exists, it will be reported in a finite amount of time. 
+Proof: Each time a state is expanded, it places its neighbors on the open list. Unless a state in the sequence is never selected for expansion, if the sequence ${S}$ exists, it will be constructed. The $k$ value of a stated does not change after it has been placed on the open list. Because of the monotonicity of $k_min$, all states in the sequence will eventually be selected for expansion \ref{stentz1994optimal}.
+
+\subsection{(10 points)}
+In the worst case $D^*$ will need to explore all the edges $O(b^d)$ or $O(size of the state space)$.
+$D^*$ is most efficient when changes are detected near the starting point in the search space.
+
+\subsection{(5 points)}
+\begin{itemize}
+
+\item Dynamic $A^*$ ($D^*$) performs better than other approaches (such as A*) in unknown/changing environments. When the initial route gets blocked, $D^*$ only needs to modify the path locally whereas other algorithms need to generate a new global trajectory. The local trajectories remain constant in complexity, but the global trajectories increase in complexity when the environment size increases. Thus, $D^*$ needs less time and resources.
+\item $D^*$ only needs to update the heuristic values of states in its immediate vicinity in order to find the new optimal path, whereas other algorithms need to recompute these values for all states in the full state space. 
+\item $D^*$ can change edge cost parameters during the problem solving process while other approaches such as A* can not, this lead to D* being able to generate optimal trajectories. 
+\end{itemize}
+
+\section{Search space formulations and admissible heuristics (20 points)}
+\subsection{(5 points)}
+$O(n^{2n})$
+
+\subsection{(5 points)}
+$5^n$
+
+\subsection{(5 points)}
+One heuristic can be the Manhattan distance between the vehicles current location $(x_i;y_i)$ and the goal $(n ,n - i + 1 )$. 
+$h_i = |x_i  -y| + |y_i -(n-i+1)|$
+
+\subsection{(5 points)}
+From the options above, $max(h_1;...;h_n)$ and $min(h_1;...;h_n)$ are admissible heuristics for the problem of moving $n$ vehicles to their destinations. 
+ 
+% --------------------------------------------------------------
+%     You don't have to mess with anything below this line.
+% --------------------------------------------------------------
+ \bibliographystyle{abbrv} 
+\begin{small}
+\bibliography{bibliography}
+\end{small}
+\end{document}
