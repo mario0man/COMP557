@@ -74,7 +74,19 @@ class ReflexAgent(Agent):
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        '''
+        Increase score value if: 
+        - far from ghosts 
+        - close to power capsule 
+        - close to food 
+		Perform following computations 
+		- distance b/w ghosts and current position - add to score 
+		- distance b/w food and current position - add inverse to score 
+		- distance b/w capsule and current position - add inverse to score 
+		Adding inverse incentivizes "closer is better" while adding directly to score incentivizes "farther is better" 
+        '''
+        # return successorGameState.getScore()
+        
 
 def scoreEvaluationFunction(currentGameState):
     """
