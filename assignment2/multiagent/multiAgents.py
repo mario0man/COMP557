@@ -219,13 +219,14 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         def Vopt(gameState, d, agent, eval):
             TotalAgents = gameState.getNumAgents()
             LegalActions = gameState.getLegalActions()
+            MaxDepth = self.depth
             PLAYER1 = 0
 
             if(agent >= TotalAgents):
                 d = d+1
                 agent = PLAYER1
 
-            if(gameState.isWin() or gameState.isLose() or d == self.depth):
+            if(gameState.isWin() or gameState.isLose() or d == MaxDepth):
                 return eval(gameState)
 
             if(agent == 0):
@@ -261,8 +262,9 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
         def ChanceLayer(gameState, d, agent, actions, eval):
             ExpectedValue = 0
-            Action = 0
+            Action = "South"
             TotalAgents = gameState.getNumAgents()
+
 
             if len(actions) == 0:
                 return eval(gameState)
@@ -274,10 +276,10 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
                 if type(UtilityValue) is not float:
                     UtilityValue = UtilityValue[1]
-                ExpectedValue += (UtilityValue * (1/float(len(actions))))
-                Action = a
 
-            return [Action, ExpectedValue]
+                ExpectedValue += (UtilityValue * (1/float(len(actions))))
+
+            return [random.choice(actions), ExpectedValue]
 
         return Vopt(gameState, 0, 0, self.evaluationFunction)[0]
 
