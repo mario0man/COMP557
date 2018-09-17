@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -75,30 +75,30 @@ class ReflexAgent(Agent):
 
         "*** YOUR CODE HERE ***"
         '''
-        Increase score value if: 
+        Increase score value if:
         - far from ghosts without power capsule powerup
         - close to ghost with power capsule powerup
-        - close to power capsule 
-        - close to food 
+        - close to power capsule
+        - close to food
         '''
         # return successorGameState.getScore()
-        oldCapsules = currentGameState.getCapsules() 
-        newCapsules = successorGameState.getCapsules() 
+        oldCapsules = currentGameState.getCapsules()
+        newCapsules = successorGameState.getCapsules()
         capsuleWasEaten = (len(oldCapsules) < len(newCapsules))
 
         ghostFactor, capsuleFactor, foodFactor = 0.0, 0.0, 0.0
 
         for ghost in newGhostStates:
         	d = manhattanDistance(newPos, ghost.getPosition())
-        	if d < 2: 
-	        	if ghost.scaredTimer > 0: 
+        	if d < 2:
+	        	if ghost.scaredTimer > 0:
 	        		ghostFactor += 1000
-	        	else: 
+	        	else:
 	        		ghostFactor -= 1000
 
-        for capsule in oldCapsules: 
-        	d = manhattanDistance(newPos, capsule) 
-        	capsuleFactor += 1/(0.1 + d) 
+        for capsule in oldCapsules:
+        	d = manhattanDistance(newPos, capsule)
+        	capsuleFactor += 1/(0.1 + d)
 
         for food in currentGameState.getFood().asList():
         	d = manhattanDistance(newPos, food)
@@ -154,7 +154,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
             Returns a list of legal actions for an agent
             agentIndex=0 means Pacman, ghosts are >= 1
 
-          gameState.generateSuccessor(agentIndex, action):
+            gameState.generateSuccessor(agentIndex, action):
             Returns the successor game state after an agent takes an action
 
           gameState.getNumAgents():
@@ -177,7 +177,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         chosenIndex = bestIndices[0]
         return bestScore,moves[chosenIndex]
 
-    def minFunction(self,gameState,agent, depth):  
+    def minFunction(self,gameState,agent, depth):
         if depth==0 or gameState.isWin() or gameState.isLose():
           return self.evaluationFunction(gameState), "noMove"
         moves=gameState.getLegalActions(agent) #get legal actions.
@@ -211,12 +211,76 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     def getAction(self, gameState):
         """
           Returns the expectimax action using self.depth and self.evaluationFunction
-
           All ghosts should be modeled as choosing uniformly at random from their
           legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+
+        def Vopt(gameState, d, agent, eval):
+            TotalAgents = gameState.getNumAgents()
+            LegalActions = gameState.getLegalActions()
+            PLAYER1 = 0
+
+            if(agent >= TotalAgents):
+                d = d+1
+                agent = PLAYER1
+
+            if(gameState.isWin() or gameState.isLose() or d == self.depth):
+                return eval(gameState)
+
+            if(agent == 0):
+                #Agent is the Player
+                actions = gameState.getLegalActions(agent)
+                return MaxLayer(gameState, d, agent, actions, eval)
+
+            if(agent > 0):
+                #Agent is a Ghost
+                actions = gameState.getLegalActions(agent)
+                return ChanceLayer(gameState, d, agent, actions, eval)
+
+        def MaxLayer(gameState, d, agent, actions, eval):
+
+            if len(actions) == 0:
+                return eval(gameState)
+
+            BestMove = ("South", -999999999999)
+            TotalAgents = gameState.getNumAgents()
+
+            for a in actions:
+                NextState = gameState.generateSuccessor(agent, a)
+                NewAgent = agent + 1
+                UtilityValue = Vopt(NextState, d, NewAgent, eval)
+
+                if type(UtilityValue) is not float:
+                    UtilityValue = UtilityValue[1]
+
+                if UtilityValue > BestMove[1]:
+                    BestMove = [a, UtilityValue]
+
+            return BestMove
+
+        def ChanceLayer(gameState, d, agent, actions, eval):
+            ExpectedValue = 0
+            Action = 0
+            TotalAgents = gameState.getNumAgents()
+
+            if len(actions) == 0:
+                return eval(gameState)
+
+            for a in actions:
+                NextState = gameState.generateSuccessor(agent, a)
+                NewAgent = agent + 1
+                UtilityValue = Vopt(NextState, d, NewAgent, eval)
+
+                if type(UtilityValue) is not float:
+                    UtilityValue = UtilityValue[1]
+                ExpectedValue += (UtilityValue * (1/float(len(actions))))
+                Action = a
+
+            return [Action, ExpectedValue]
+
+        return Vopt(gameState, 0, 0, self.evaluationFunction)[0]
+
 
 def betterEvaluationFunction(currentGameState):
     """
@@ -230,4 +294,3 @@ def betterEvaluationFunction(currentGameState):
 
 # Abbreviation
 better = betterEvaluationFunction
-
