@@ -142,10 +142,11 @@ class MinimaxAgent(MultiAgentSearchAgent):
     """
       Your minimax agent (question 2)
     """
-    
+
     def getAction(self, gameState):
         """
-          Returns the minimax action from the current gameState using self.depth and self.evaluationFunction.
+          Returns the minimax action from the current gameState using self.depth
+          and self.evaluationFunction.
 
           Here are some method calls that might be useful when implementing minimax.
 
@@ -160,6 +161,73 @@ class MinimaxAgent(MultiAgentSearchAgent):
             Returns the total number of agents in the game
         """
         "*** YOUR CODE HERE ***"
+        # util.raiseNotDefined()
+        def Vopt(gameState, d, agent, eval):
+            TotalAgents = gameState.getNumAgents()
+            LegalActions = gameState.getLegalActions()
+            MaxDepth = self.depth
+            PLAYER1 = 0
+
+            if(agent >= TotalAgents):
+                d = d+1
+                agent = PLAYER1
+
+            if(gameState.isWin() or gameState.isLose() or d == MaxDepth):
+                return eval(gameState)
+
+            if(agent == 0):
+                #Agent is the Player
+                actions = gameState.getLegalActions(agent)
+                return MaxLayer(gameState, d, agent, actions, eval)
+
+            if(agent > 0):
+                #Agent is a Ghost
+                actions = gameState.getLegalActions(agent)
+                return MinLayer(gameState, d, agent, actions, eval)
+
+        def MaxLayer(gameState, d, agent, actions, eval):
+
+            if len(actions) == 0:
+                return eval(gameState)
+
+            BestMove = ("South", -999999999999)
+            TotalAgents = gameState.getNumAgents()
+
+            for a in actions:
+                NextState = gameState.generateSuccessor(agent, a)
+                NewAgent = agent + 1
+                UtilityValue = Vopt(NextState, d, NewAgent, eval)
+
+                if type(UtilityValue) is not float:
+                    UtilityValue = UtilityValue[1]
+
+                if UtilityValue > BestMove[1]:
+                    BestMove = [a, UtilityValue]
+
+            return BestMove
+
+        def MinLayer(gameState, d, agent, actions, eval):
+
+            if len(actions) == 0:
+                return eval(gameState)
+
+            BestMove = ("South", 99999999999)
+            TotalAgents = gameState.getNumAgents()
+
+            for a in actions:
+                NextState = gameState.generateSuccessor(agent, a)
+                NewAgent = agent + 1
+                UtilityValue = Vopt(NextState, d, NewAgent, eval)
+
+                if type(UtilityValue) is not float:
+                    UtilityValue = UtilityValue[1]
+
+                if UtilityValue < BestMove[1]:
+                    BestMove = [a, UtilityValue]
+
+            return BestMove
+
+        return Vopt(gameState, 0, 0, self.evaluationFunction)[0]
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
@@ -189,13 +257,14 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         def Vopt(gameState, d, agent, eval):
             TotalAgents = gameState.getNumAgents()
             LegalActions = gameState.getLegalActions()
+            MaxDepth = self.depth
             PLAYER1 = 0
 
             if(agent >= TotalAgents):
                 d = d+1
                 agent = PLAYER1
 
-            if(gameState.isWin() or gameState.isLose() or d == self.depth):
+            if(gameState.isWin() or gameState.isLose() or d == MaxDepth):
                 return eval(gameState)
 
             if(agent == 0):
@@ -231,8 +300,9 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
         def ChanceLayer(gameState, d, agent, actions, eval):
             ExpectedValue = 0
-            Action = 0
+            Action = "South"
             TotalAgents = gameState.getNumAgents()
+
 
             if len(actions) == 0:
                 return eval(gameState)
@@ -244,10 +314,10 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
                 if type(UtilityValue) is not float:
                     UtilityValue = UtilityValue[1]
-                ExpectedValue += (UtilityValue * (1/float(len(actions))))
-                Action = a
 
-            return [Action, ExpectedValue]
+                ExpectedValue += (UtilityValue * (1/float(len(actions))))
+
+            return [random.choice(actions), ExpectedValue]
 
         return Vopt(gameState, 0, 0, self.evaluationFunction)[0]
 
@@ -259,8 +329,49 @@ def betterEvaluationFunction(currentGameState):
 
       DESCRIPTION: <write something here so we know what you did>
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # Useful information you can extract from a GameState (pacman.py)
+    '''
+    Increase score value if:
+    - far from ghosts without power capsule powerup
+    - close to ghost with power capsule powerup
+    - close to power capsule
+    - close to food
+    '''
+    # return successorGameState.getScore()
+    FoodPositions = currentGameState.getFood().asList()
+    FoodDistances = []
+    GhostStates = currentGameState.getGhostStates()
+    GhostDistances = []
+    CapsulePositions = currentGameState.getCapsules()
+    CurrentPosition = list(currentGameState.getPacmanPosition())
+    ghostFactor = 1
+    foodFactor = 1
+
+
+    for f in FoodPositions:
+        d = manhattanDistance(f, CurrentPosition)
+        FoodDistances.append(d)
+
+    if not FoodDistances:
+        FoodDistances.append(0)
+
+    foodFactor = min(FoodDistances)
+
+    for ghost in GhostStates:
+    	d = manhattanDistance(CurrentPosition, ghost.getPosition())
+        GhostDistances.append(d)
+
+    if not GhostDistances:
+        GhostDistances.append(99999999)
+
+    ghostFactor = min(GhostDistances)
+
+    if ghostFactor == 0: ghostFactor = 1
+    if foodFactor == 0: foodFactor = 1
+
+    return currentGameState.getScore() + (4.0/foodFactor) + (1.0/ghostFactor)
+
+
 
 # Abbreviation
 better = betterEvaluationFunction
