@@ -162,34 +162,72 @@ class MinimaxAgent(MultiAgentSearchAgent):
         """
         "*** YOUR CODE HERE ***"
         # util.raiseNotDefined()
-        bestScore, bestMove = self.maxFunction(gameState,self.depth)
+        def Vopt(gameState, d, agent, eval):
+            TotalAgents = gameState.getNumAgents()
+            LegalActions = gameState.getLegalActions()
+            MaxDepth = self.depth
+            PLAYER1 = 0
 
-        return bestMove
+            if(agent >= TotalAgents):
+                d = d+1
+                agent = PLAYER1
 
-    def maxFunction(self,gameState,depth):
-        if depth==0 or gameState.isWin() or gameState.isLose():
-          return self.evaluationFunction(gameState), "noMove"
+            if(gameState.isWin() or gameState.isLose() or d == MaxDepth):
+                return eval(gameState)
 
-        moves=gameState.getLegalActions()
-        scores = [self.minFunction(gameState.generateSuccessor(self.index,move),1, depth) for move in moves]
-        bestScore=max(scores)
-        bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
-        chosenIndex = bestIndices[0]
-        return bestScore,moves[chosenIndex]
+            if(agent == 0):
+                #Agent is the Player
+                actions = gameState.getLegalActions(agent)
+                return MaxLayer(gameState, d, agent, actions, eval)
 
-    def minFunction(self,gameState,agent, depth):
-        if depth==0 or gameState.isWin() or gameState.isLose():
-          return self.evaluationFunction(gameState), "noMove"
-        moves=gameState.getLegalActions(agent) #get legal actions.
-        scores=[]
-        if(agent!=gameState.getNumAgents()-1):
-          scores =[self.minFunction(gameState.generateSuccessor(agent,move),agent+1,depth) for move in moves]
-        else:
-          scores =[self.maxFunction(gameState.generateSuccessor(agent,move),(depth-1))[0] for move in moves]
-        minScore=min(scores)
-        worstIndices = [index for index in range(len(scores)) if scores[index] == minScore]
-        chosenIndex = worstIndices[0]
-        return minScore, moves[chosenIndex]
+            if(agent > 0):
+                #Agent is a Ghost
+                actions = gameState.getLegalActions(agent)
+                return MinLayer(gameState, d, agent, actions, eval)
+
+        def MaxLayer(gameState, d, agent, actions, eval):
+
+            if len(actions) == 0:
+                return eval(gameState)
+
+            BestMove = ("South", -999999999999)
+            TotalAgents = gameState.getNumAgents()
+
+            for a in actions:
+                NextState = gameState.generateSuccessor(agent, a)
+                NewAgent = agent + 1
+                UtilityValue = Vopt(NextState, d, NewAgent, eval)
+
+                if type(UtilityValue) is not float:
+                    UtilityValue = UtilityValue[1]
+
+                if UtilityValue > BestMove[1]:
+                    BestMove = [a, UtilityValue]
+
+            return BestMove
+
+        def MinLayer(gameState, d, agent, actions, eval):
+
+            if len(actions) == 0:
+                return eval(gameState)
+
+            BestMove = ("South", 99999999999)
+            TotalAgents = gameState.getNumAgents()
+
+            for a in actions:
+                NextState = gameState.generateSuccessor(agent, a)
+                NewAgent = agent + 1
+                UtilityValue = Vopt(NextState, d, NewAgent, eval)
+
+                if type(UtilityValue) is not float:
+                    UtilityValue = UtilityValue[1]
+
+                if UtilityValue < BestMove[1]:
+                    BestMove = [a, UtilityValue]
+
+            return BestMove
+
+        return Vopt(gameState, 0, 0, self.evaluationFunction)[0]
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
@@ -291,8 +329,45 @@ def betterEvaluationFunction(currentGameState):
 
       DESCRIPTION: <write something here so we know what you did>
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # Useful information you can extract from a GameState (pacman.py)
+    '''
+    Increase score value if:
+    - far from ghosts without power capsule powerup
+    - close to ghost with power capsule powerup
+    - close to power capsule
+    - close to food
+    '''
+    # return successorGameState.getScore()
+    FoodPositions = currentGameState.getFood().asList()
+    FoodDistances = []
+    GhostStates = currentGameState.getGhostStates()
+    CapsulePositions = currentGameState.getCapsules()
+    CurrentPosition = list(currentGameState.getPacmanPosition())
+    ghostFactor = 1
+    foodFactor = 1
+
+
+    for f in FoodPositions:
+        d = manhattanDistance(f, CurrentPosition)
+        FoodDistances.append(d)
+
+    if not FoodDistances:
+        FoodDistances.append(0)
+
+    for ghost in GhostStates:
+    	d = manhattanDistance(CurrentPosition, ghost.getPosition())
+    	if d < 2:
+        	if ghost.scaredTimer > 0:
+        		ghostFactor += 1000
+        	else:
+        		ghostFactor -= 1000
+
+    for f in currentGameState.getFood().asList():
+    	d = manhattanDistance(CurrentPosition, f)
+    	foodFactor += 1/(0.1 + d*d)
+
+    return (3*currentGameState.getScore()) + (0.3/ghostFactor) + (0.1/foodFactor) - (3*min(FoodDistances))
+
 
 # Abbreviation
 better = betterEvaluationFunction
