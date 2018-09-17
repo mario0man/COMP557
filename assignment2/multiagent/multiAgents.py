@@ -169,7 +169,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
             PLAYER1 = 0
 
             if(agent >= TotalAgents):
-                d = d+1
+                d += 1 
                 agent = PLAYER1
 
             if(gameState.isWin() or gameState.isLose() or d == MaxDepth):
@@ -191,7 +191,6 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 return eval(gameState)
 
             BestMove = ("South", -999999999999)
-            TotalAgents = gameState.getNumAgents()
 
             for a in actions:
                 NextState = gameState.generateSuccessor(agent, a)
@@ -212,7 +211,6 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 return eval(gameState)
 
             BestMove = ("South", 99999999999)
-            TotalAgents = gameState.getNumAgents()
 
             for a in actions:
                 NextState = gameState.generateSuccessor(agent, a)
