@@ -341,6 +341,7 @@ def betterEvaluationFunction(currentGameState):
     FoodPositions = currentGameState.getFood().asList()
     FoodDistances = []
     GhostStates = currentGameState.getGhostStates()
+    GhostDistances = []
     CapsulePositions = currentGameState.getCapsules()
     CurrentPosition = list(currentGameState.getPacmanPosition())
     ghostFactor = 1
@@ -354,19 +355,22 @@ def betterEvaluationFunction(currentGameState):
     if not FoodDistances:
         FoodDistances.append(0)
 
+    foodFactor = min(FoodDistances)
+
     for ghost in GhostStates:
     	d = manhattanDistance(CurrentPosition, ghost.getPosition())
-    	if d < 2:
-        	if ghost.scaredTimer > 0:
-        		ghostFactor += 1000
-        	else:
-        		ghostFactor -= 1000
+        GhostDistances.append(d)
 
-    for f in currentGameState.getFood().asList():
-    	d = manhattanDistance(CurrentPosition, f)
-    	foodFactor += 1/(0.1 + d*d)
+    if not GhostDistances:
+        GhostDistances.append(99999999)
 
-    return (3*currentGameState.getScore()) + (0.3/ghostFactor) + (0.1/foodFactor) - (3*min(FoodDistances))
+    ghostFactor = min(GhostDistances)
+
+    if ghostFactor == 0: ghostFactor = 1
+    if foodFactor == 0: foodFactor = 1
+
+    return currentGameState.getScore() + (4.0/foodFactor) + (1.0/ghostFactor)
+
 
 
 # Abbreviation
