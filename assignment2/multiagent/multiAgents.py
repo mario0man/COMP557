@@ -323,14 +323,32 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
 
 
 def betterEvaluationFunction(currentGameState):
-    """
+    '''
       Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
       evaluation function (question 5).
 
-      DESCRIPTION: <write something here so we know what you did>
-    """
+      DESCRIPTION: This Evaluation Function looks at 3 information concerning
+      the board state.
+
+      First one is the current Game Score. If the game score is higher, it means
+      we are deeper down the game tree, most of the time implying that we are on
+      a desired game state. Higher score is desired for a state.
+
+      Second information is the food factor. We calculate the distance to the food
+      that is closest to pacman. We take its reciprocal, and add it to the
+      score. So if there is a food that is really close, the score of the state
+      will increase drastically. This might be considered a greedy strategy, since
+      it might create a lot of risk to be eaten by the ghosts, just to get food.
+
+      Third information is the distance to closest ghost. Originally we were
+      going to decrease the score, if the ghost was close. But it resulted in a
+      lot of losses. Just by experimenting we realized that the opposite was true.
+      If you watch it with the graphics on, pacman actually follows the ghosts, and
+      for some reason it's giving him an advantage. It might be because since the ghost
+      is close, we have more predictive power of where it will be after a couple of
+      moves later.
     # Useful information you can extract from a GameState (pacman.py)
-    '''
+
     Increase score value if:
     - far from ghosts without power capsule powerup
     - close to ghost with power capsule powerup
@@ -352,8 +370,8 @@ def betterEvaluationFunction(currentGameState):
         d = manhattanDistance(f, CurrentPosition)
         FoodDistances.append(d)
 
-    if not FoodDistances:
-        FoodDistances.append(0)
+    if len(FoodDistances) == 0:
+        FoodDistances = [0]
 
     foodFactor = min(FoodDistances)
 
@@ -361,15 +379,16 @@ def betterEvaluationFunction(currentGameState):
     	d = manhattanDistance(CurrentPosition, ghost.getPosition())
         GhostDistances.append(d)
 
-    if not GhostDistances:
-        GhostDistances.append(99999999)
+    if len(GhostDistances) == 0:
+        GhostDistances = [99999]
 
     ghostFactor = min(GhostDistances)
 
     if ghostFactor == 0: ghostFactor = 1
     if foodFactor == 0: foodFactor = 1
 
-    return currentGameState.getScore() + (4.0/foodFactor) + (1.0/ghostFactor)
+    #return currentGameState.getScore() + (1.0/foodFactor) + (1.0/ghostFactor)
+    return currentGameState.getScore() + (1.0/foodFactor) + ghostFactor
 
 
 
