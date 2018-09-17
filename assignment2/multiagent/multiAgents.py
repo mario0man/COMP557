@@ -239,7 +239,83 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # util.raiseNotDefined()
+        def Vopt(gameState, d, agent, eval, alpha, beta):
+            TotalAgents = gameState.getNumAgents()
+            LegalActions = gameState.getLegalActions()
+            MaxDepth = self.depth
+            PLAYER1 = 0
+
+            if(agent >= TotalAgents):
+                d = d+1
+                agent = PLAYER1
+
+            if(gameState.isWin() or gameState.isLose() or d == MaxDepth):
+                return eval(gameState)
+
+            if(agent == 0):
+                #Agent is the Player
+                actions = gameState.getLegalActions(agent)
+                return MaxLayer(gameState, d, agent, actions, eval, alpha, beta)
+
+            if(agent > 0):
+                #Agent is a Ghost
+                actions = gameState.getLegalActions(agent)
+                return MinLayer(gameState, d, agent, actions, eval, alpha, beta)
+
+        def MaxLayer(gameState, d, agent, actions, eval, alpha, beta):
+
+            if len(actions) == 0:
+                return eval(gameState)
+
+            BestMove = ("South", -999999999999)
+            TotalAgents = gameState.getNumAgents()
+
+            for a in actions:
+                NextState = gameState.generateSuccessor(agent, a)
+                NewAgent = agent + 1
+                UtilityValue = Vopt(NextState, d, NewAgent, eval, alpha, beta)
+
+                if type(UtilityValue) is not float:
+                    UtilityValue = UtilityValue[1]
+
+                if UtilityValue > BestMove[1]:
+                    BestMove = [a, UtilityValue]
+
+                if UtilityValue > beta: 
+                	return BestMove
+
+                alpha = max(alpha, UtilityValue)
+
+            return BestMove
+
+        def MinLayer(gameState, d, agent, actions, eval, alpha, beta):
+
+            if len(actions) == 0:
+                return eval(gameState)
+
+            BestMove = ("South", 99999999999)
+            TotalAgents = gameState.getNumAgents()
+
+            for a in actions:
+                NextState = gameState.generateSuccessor(agent, a)
+                NewAgent = agent + 1
+                UtilityValue = Vopt(NextState, d, NewAgent, eval, alpha, beta)
+
+                if type(UtilityValue) is not float:
+                    UtilityValue = UtilityValue[1]
+
+                if UtilityValue < BestMove[1]:
+                    BestMove = [a, UtilityValue]
+
+                if UtilityValue < alpha:
+                	return BestMove
+
+                beta = min(beta, UtilityValue)
+
+            return BestMove
+
+        return Vopt(gameState, 0, 0, self.evaluationFunction, -float('inf'), float('inf'))[0]
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
