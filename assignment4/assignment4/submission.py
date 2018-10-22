@@ -562,13 +562,16 @@ class SchedulingCSPConstructor():
         # BEGIN_YOUR_CODE (around 20 lines of code expected)      
         # raise Exception("Not implemented yet")
         def temp(x, y):
-            print(x, y)
             if x is None or y is None:
                 return False
             semX, yearX = x[:-4], x[-4:]
             semY, yearY = y[:-4], y[-4:]
-            return yearY > yearX
-        print(csp.valNames)
+            semX = 0 if semX == 'Fall' else 1
+            semY = 0 if semY == 'Fall' else 1
+            if yearX == yearY:
+            	return semX > semY
+            return yearX > yearY
+
         for req in self.profile.requests:
             if len(req.prereqs) == 0: 
                 continue 
@@ -576,9 +579,6 @@ class SchedulingCSPConstructor():
                 for preq in req.prereqs:
                     # print(csp.valNames[cid], csp.valNames[preq])    
                     csp.add_binary_potential(cid, preq, lambda x, y: x == None or temp(x, y) )
-
-        
-
 
         # END_YOUR_CODE
 
@@ -612,7 +612,7 @@ class SchedulingCSPConstructor():
         @param csp: The CSP where the additional constraints will be added to.
         """
         # BEGIN_YOUR_CODE (around 13-15 lines of code expected)
-        raise Exception("Not implemented yet")
+        # raise Exception("Not implemented yet")
         for quarter in self.profile.semesters:
             quarter_variables = []
             for req in self.profile.requests:

@@ -6,7 +6,6 @@ maxUnits 4
 # These are the semesters that I need to fill. It is assumed that
 # the semesters are sorted in chronological order.
 register Spr2013
-register Spr2014
 register Fall2014
 
 # Courses I've already taken
