@@ -75,6 +75,7 @@ class CSP:
         value across the domain will be merged with any previously added
         unary potential functions through elementwise multiplication.
         """
+        print(self.varNames)
         var = self.varNames.index(varName)
         potential = [float(potentialFunc(val)) for val in self.valNames[var]]
         if self.unaryPotentials[var] is not None:

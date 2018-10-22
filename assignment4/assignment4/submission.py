@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import collections, util, copy
+from itertools import product
 
 ############################################################
 # Problem 3.1a
@@ -17,7 +18,21 @@ def create_nqueens_csp(n = 8):
     """
     csp = util.CSP()
     # BEGIN_YOUR_CODE (around 7 lines of code expected)
-    raise Exception("Not implemented yet")
+    # raise Exception("Not implemented yet")
+    queens = range(n)
+    for i in queens:
+        domain = []
+        for j in range(n):
+            domain.append((i, j))
+        csp.add_variable(i, domain)
+
+    for q1 in queens:
+        for q2 in queens:
+            if q1 != q2:
+                csp.add_binary_potential(q1, q2, lambda x, y : x[0] != y[0])
+                csp.add_binary_potential(q1, q2, lambda x, y : x[1] != y[1])
+                csp.add_binary_potential(q1, q2, lambda x, y : 
+                                         abs(x[0] - y[0]) != abs(x[1] - y[1]))
     # END_YOUR_CODE
     return csp
 
@@ -190,7 +205,15 @@ class BacktrackingSearch():
             # Problem 3.1d
             # When arc consistency check is enabled.
             # BEGIN_YOUR_CODE (around 10-15 lines of code expected)
-            raise Exception("Not implemented yet")
+            # raise Exception("Not implemented yet")
+            cur_domain = copy.deepcopy(self.domains)
+            for val in ordered_values:
+                self.domains = copy.deepcopy(cur_domain)
+                assignment[var] = val
+                self.domains[var] = [val]
+                self.arc_consistency_check(var)
+                self.backtrack(assignment, numAssigned + 1, weight)
+                assignment[var] = None
             # END_YOUR_CODE
 
     def get_unassigned_variable(self, assignment):
@@ -213,7 +236,19 @@ class BacktrackingSearch():
             # Heuristic: most constrained variable (MCV)
             # Select a variable with the least number of remaining domain values.
             # BEGIN_YOUR_CODE (around 5 lines of code expected)
-            raise Exception("Not implemented yet")
+            # raise Exception("Not implemented yet")
+            numAssign = len(assignment)
+            varList = []
+            for var in xrange(numAssign):
+                if assignment[var] is None:
+                    domain = self.domains[var]
+                    aCount = 0
+                    for val in domain:
+                        delta = self.get_delta_weight(assignment, var, val)
+                        if delta > 0:
+                            aCount += 1
+                    varList.append( (aCount, var) )
+            return min(varList)[1]
             # END_YOUR_CODE
 
     def get_ordered_values(self, assignment, var):
@@ -240,7 +275,32 @@ class BacktrackingSearch():
             # constraints imposed on unassigned neighboring variables.
             # BEGIN_YOUR_CODE (around 12 lines of code expected)
             # Will update the domains! The unary constraint on var, val was already checked by backtrack before calling this method
-            raise Exception("Not implemented yet")
+            # raise Exception("Not implemented yet")
+            values = self.domains[var]
+            neighbors = self.csp.binaryPotentials[var]
+
+            neighbor_values = []
+
+            for n in neighbors:
+                vals = []
+                for i in values:
+                    count = 0
+                    for j in range(len(neighbors[n][i])):
+                        if neighbors[n][i][j] != 0.0:
+                            count += 1
+                    vals.append((i, count))
+                neighbor_values.append(vals)
+
+            max_sum = None
+            max_list = None
+            for nv in neighbor_values:
+                curSum = sum([n[1] for n in nv])
+                if max_sum == None or curSum > max_sum:
+                    max_sum = curSum
+                    max_list = nv
+
+            max_list.sort(key=lambda tup: tup[1])
+            return [elem[0] for elem in max_list]
             # END_YOUR_CODE
    
     def arc_consistency_check(self, var):
@@ -283,7 +343,23 @@ class BacktrackingSearch():
         """
         # Problem 3.1d
         # BEGIN_YOUR_CODE (around 15-20 lines of code expected)
-        raise Exception("Not implemented yet")
+        # raise Exception("Not implemented yet")
+        queue = [var]
+        while len(queue) != 0:
+            x = queue[0]
+            queue.remove(x)
+            neighbors = self.csp.binaryPotentials[x]
+            vals = self.domains[x]
+            for n in neighbors:
+                nvals = copy.deepcopy(self.domains[n])
+                domain = set()
+                for i in vals:
+                    for j in nvals:
+                        if neighbors[n][i][j] != 0.0:
+                            domain.add(j)
+                if len(domain) != len(nvals):
+                    queue.append(n)
+                self.domains[n] = list(domain)
         # END_YOUR_CODE
 
 ############################################################
@@ -310,8 +386,68 @@ def get_sum_variable(csp, name, variables, maxSum):
     """
 
     # BEGIN_YOUR_CODE (around 12-15 lines of code expected)
-    raise Exception("Not implemented yet")
+    # raise Exception("Not implemented yet")
+    prefix = "sum" + name
+    if len(variables) == 0:
+        final_prefix = prefix + "final"
+        csp.add_variable(final_prefix, [0])
+        return final_prefix
+    for i in range(len(variables)):
+        aux = prefix + str(i) + "aux"
+        csp.add_variable(aux, [(x,y) for x,y in product(range(maxSum + 1), range(maxSum + 1))])
+        csp.add_binary_potential(variables[i], aux, lambda x,y: y[1] == y[0] + x)
+        if i > 0:
+            csp.add_binary_potential(aux, prefix + str(i-1) + "aux", lambda x,y: x[0]== y[1])
+        else:
+            csp.add_unary_potential(aux, lambda x: x[0] == 0)
+    last_prefix = prefix + str(len(variables) - 1) + "aux"
+    final_prefix = prefix + "final"
+    csp.add_variable(final_prefix, range(maxSum + 1))
+    csp.add_binary_potential(last_prefix, final_prefix, lambda x, y: y == x[1])
+    return final_prefix
     # END_YOUR_CODE
+
+def get_or_variable(csp, name, variables, value):
+    """
+    Create a new variable with domain [True, False] that can only be assigned to
+    True iff at least one of the |variables| is assigned to |value|. You should
+    add any necessary intermediate variables, unary potentials, and binary
+    potentials to achieve this. Then, return the name of this variable.
+
+    @param name: Prefix of all the variables that are going to be added.
+        Can be any hashable objects. For every variable |var| added in this
+        function, it's recommended to use a naming strategy such as
+        ('or', |name|, |var|) to avoid conflicts with other variable names.
+    @param variables: A list of variables in the CSP that are participating
+        in this OR function. Note that if this list is empty, then the returned
+        variable created should never be assigned to True.
+    @param value: For the returned OR variable being created to be assigned to
+        True, at least one of these variables must have this value.
+
+    @return result: The OR variable's name. This variable should have domain
+        [True, False] and constraints s.t. it's assigned to True iff at least
+        one of the |variables| is assigned to |value|.
+    """
+
+    # BEGIN_YOUR_CODE (around 20 lines of code expected)
+    prefix = "or" + name
+    if len(variables) == 0:
+        final_prefix = prefix + "final"
+        csp.add_variable(final_prefix, [False])
+        return final_prefix
+    for i in range(len(variables)):
+        aux = prefix + str(i) + "aux"
+        csp.add_variable(aux, [(True, True), (True, False), (False, True), (False, False)])
+        csp.add_binary_potential(variables[i], aux, lambda x, y: y[1] == ((x == value) or y[0]))
+        if i > 0:
+            csp.add_binary_potential(aux, prefix + str(i-1) + "aux", lambda x, y: x[0] == y[1])
+        else:
+            csp.add_unary_potential(aux, lambda x: not x[0])
+    last_prefix = prefix + str(len(variables) - 1) + "aux"
+    final_prefix = prefix + "final"
+    csp.add_variable(final_prefix, [True, False])
+    csp.add_binary_potential(last_prefix, final_prefix, lambda x, y: y == x[1])
+    return final_prefix
 
 ############################################################
 # Problem 3.3
@@ -380,13 +516,16 @@ class SchedulingCSPConstructor():
     def add_semester_constraints(self, csp):
         """
         If the profile explicitly wants a request to be satisfied in some given
-        semesters, e.g. Fall2013, then add constraints to not allow that request to
-        be satisified in any other semester.
+        semesters, e.g. Fall2013, then add constraints to not allow that request to be satisified in any other semester.
 
         @param csp: The CSP where the additional constraints will be added to.
         """
         # BEGIN_YOUR_CODE (around 4 lines of code expected)      
-        raise Exception("Not implemented yet")
+        # raise Exception("Not implemented yet")
+        for req in self.profile.requests: 
+            for cid in req.cids:
+                for semester in self.profile.semesters:
+                    csp.add_unary_potential(cid, lambda semester: semester is None or semester in req.semesters)
         # END_YOUR_CODE
 
     def add_request_weights(self, csp):
@@ -399,7 +538,11 @@ class SchedulingCSPConstructor():
         @param csp: The CSP where the additional constraints will be added to.
         """
         # BEGIN_YOUR_CODE (around 3 lines of code expected)      
-        raise Exception("Not implemented yet")
+        # raise Exception("Not implemented yet")
+        for req in self.profile.requests:
+            for cid in req.cids: 
+                csp.add_unary_potential(cid, lambda x: req.weight if x != None else 1)
+        
         # END_YOUR_CODE
 
     def add_prereq_constraints(self, csp):
@@ -417,10 +560,29 @@ class SchedulingCSPConstructor():
         @param csp: The CSP where the additional constraints will be added to.
         """
         # BEGIN_YOUR_CODE (around 20 lines of code expected)      
-        raise Exception("Not implemented yet")
+        # raise Exception("Not implemented yet")
+        def temp(x, y):
+            print(x, y)
+            if x is None or y is None:
+                return False
+            semX, yearX = x[:-4], x[-4:]
+            semY, yearY = y[:-4], y[-4:]
+            return yearY > yearX
+        print(csp.valNames)
+        for req in self.profile.requests:
+            if len(req.prereqs) == 0: 
+                continue 
+            for cid in req.cids:
+                for preq in req.prereqs:
+                    # print(csp.valNames[cid], csp.valNames[preq])    
+                    csp.add_binary_potential(cid, preq, lambda x, y: x == None or temp(x, y) )
+
+        
+
+
         # END_YOUR_CODE
 
-    def add_unit_constraints(self, csp):
+    def add_credit_constraints(self, csp):
         """
         Add constraint to the CSP to ensure that the total number of units are
         within profile.minUnits/maxmaxUnits, inclusively. The allowed range for
@@ -451,6 +613,19 @@ class SchedulingCSPConstructor():
         """
         # BEGIN_YOUR_CODE (around 13-15 lines of code expected)
         raise Exception("Not implemented yet")
+        for quarter in self.profile.semesters:
+            quarter_variables = []
+            for req in self.profile.requests:
+                for cid in req.cids:
+                    csp.add_variable((cid, quarter), 
+                                     [0] + range(self.bulletin.courses[cid].minUnits, self.bulletin.courses[cid].maxUnits + 1))
+                    quarter_variables.append((cid, quarter))
+                    csp.add_binary_potential((req, quarter), (cid, quarter), 
+                                             lambda x, y: y > 0 if x == cid else y == 0)
+            quarter_max_sum = get_sum_variable(csp, "quarter" + quarter, 
+                                               quarter_variables, 
+                                               self.profile.maxUnits)
+            csp.add_unary_potential(quarter_max_sum, lambda x: x >= self.profile.minUnits and x <= self.profile.minUnits)
         # END_YOUR_CODE
 
     def add_all_additional_constraints(self, csp):
@@ -462,4 +637,4 @@ class SchedulingCSPConstructor():
         self.add_semester_constraints(csp)
         self.add_request_weights(csp)
         self.add_prereq_constraints(csp)
-        self.add_unit_constraints(csp)
+        self.add_credit_constraints(csp)
