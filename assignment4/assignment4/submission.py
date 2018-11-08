@@ -1,7 +1,6 @@
 from __future__ import print_function
 
-import collections, util, copy
-from itertools import product
+import collections, util, copy, itertools
 
 ############################################################
 # Problem 3.1a
@@ -19,20 +18,18 @@ def create_nqueens_csp(n = 8):
 	csp = util.CSP()
 	# BEGIN_YOUR_CODE (around 7 lines of code expected)
 	# raise Exception("Not implemented yet")
-	queens = range(n)
-	for i in queens:
-		domain = []
+	for i in range(n):
+		domain = [] 
 		for j in range(n):
 			domain.append((i, j))
 		csp.add_variable(i, domain)
 
-	for q1 in queens:
-		for q2 in queens:
-			if q1 != q2:
-				csp.add_binary_potential(q1, q2, lambda x, y : x[0] != y[0])
-				csp.add_binary_potential(q1, q2, lambda x, y : x[1] != y[1])
-				csp.add_binary_potential(q1, q2, lambda x, y : 
-										 abs(x[0] - y[0]) != abs(x[1] - y[1]))
+	for q1 in range(n):
+		for q2 in range(n):
+			if q1 is not q2:
+				csp.add_binary_potential(q1, q2, lambda q1, q2 : q1[0] != q2[0])
+				csp.add_binary_potential(q1, q2, lambda q1, q2 : q1[1] != q2[1])
+				csp.add_binary_potential(q1, q2, lambda q1, q2 : abs(q1[0] - q2[0]) != abs(q1[1] - q2[1]))
 	# END_YOUR_CODE
 	return csp
 
@@ -206,11 +203,11 @@ class BacktrackingSearch():
 			# When arc consistency check is enabled.
 			# BEGIN_YOUR_CODE (around 10-15 lines of code expected)
 			# raise Exception("Not implemented yet")
-			cur_domain = copy.deepcopy(self.domains)
-			for val in ordered_values:
-				self.domains = copy.deepcopy(cur_domain)
-				assignment[var] = val
-				self.domains[var] = [val]
+			curValues = copy.deepcopy(self.domains)
+			for value in ordered_values:
+				self.domains = copy.deepcopy(curValues)
+				self.domains[var] = [value]
+				assignment[var] = value
 				self.arc_consistency_check(var)
 				self.backtrack(assignment, numAssigned + 1, weight)
 				assignment[var] = None
@@ -239,15 +236,15 @@ class BacktrackingSearch():
 			# raise Exception("Not implemented yet")
 			numAssign = len(assignment)
 			varList = []
-			for var in xrange(numAssign):
-				if assignment[var] is None:
-					domain = self.domains[var]
-					aCount = 0
-					for val in domain:
-						delta = self.get_delta_weight(assignment, var, val)
+			for var in range(numAssign):
+				if assignment[var] == None:
+					varDomain = self.domains[var]
+					count = 0
+					for value in varDomain:
+						delta = self.get_delta_weight(assignment, var, value)
 						if delta > 0:
-							aCount += 1
-					varList.append( (aCount, var) )
+							count += 1
+					varList.append((count, var))
 			return min(varList)[1]
 			# END_YOUR_CODE
 
@@ -276,31 +273,28 @@ class BacktrackingSearch():
 			# BEGIN_YOUR_CODE (around 12 lines of code expected)
 			# Will update the domains! The unary constraint on var, val was already checked by backtrack before calling this method
 			# raise Exception("Not implemented yet")
-			values = self.domains[var]
-			neighbors = self.csp.binaryPotentials[var]
+			varDomain = self.domains[var]
+			nbrs = self.csp.binaryPotentials[var]
+			nbrValues = []
 
-			neighbor_values = []
-
-			for n in neighbors:
-				vals = []
-				for i in values:
+			for nbr in nbrs:
+				values = []
+				for i in varDomain:
 					count = 0
-					for j in range(len(neighbors[n][i])):
-						if neighbors[n][i][j] != 0.0:
-							count += 1
-					vals.append((i, count))
-				neighbor_values.append(vals)
+					for j in range(len(nbrs[nbr][i])):
+						count += 1 if (nbrs[nbr][i][j] != 0.0) else 0
+					values.append((i, count))
+				nbrValues.append(values)
 
-			max_sum = None
-			max_list = None
-			for nv in neighbor_values:
-				curSum = sum([n[1] for n in nv])
-				if max_sum == None or curSum > max_sum:
-					max_sum = curSum
-					max_list = nv
+			maxSum = maxList = None
+			for values in nbrValues:
+				curSum = sum([value[1] for value in values])
+				if maxSum == None or curSum > maxSum:
+					maxSum = curSum
+					maxList = values
 
-			max_list.sort(key=lambda tup: tup[1])
-			return [elem[0] for elem in max_list]
+			maxList.sort(key=lambda tp: tp[1])
+			return [item[0] for item in maxList]
 			# END_YOUR_CODE
    
 	def arc_consistency_check(self, var):
@@ -345,21 +339,20 @@ class BacktrackingSearch():
 		# BEGIN_YOUR_CODE (around 15-20 lines of code expected)
 		# raise Exception("Not implemented yet")
 		queue = [var]
-		while len(queue) != 0:
-			x = queue[0]
-			queue.remove(x)
-			neighbors = self.csp.binaryPotentials[x]
-			vals = self.domains[x]
-			for n in neighbors:
-				nvals = copy.deepcopy(self.domains[n])
+		while queue != []:
+			curNode = queue.pop(0)
+			nbrs = self.csp.binaryPotentials[curNode]
+			curValues = self.domains[curNode]
+			for nbr in nbrs:
+				nbrValues = copy.deepcopy(self.domains[nbr])
 				domain = set()
-				for i in vals:
-					for j in nvals:
-						if neighbors[n][i][j] != 0.0:
+				for i in curValues:
+					for j in nbrValues:
+						if nbrs[nbr][i][j] != 0.0:
 							domain.add(j)
-				if len(domain) != len(nvals):
-					queue.append(n)
-				self.domains[n] = list(domain)
+				if len(domain) - len(nbrValues) != 0:
+					queue.append(nbr)
+				self.domains[nbr] = list(domain)
 		# END_YOUR_CODE
 
 ############################################################
@@ -388,66 +381,25 @@ def get_sum_variable(csp, name, variables, maxSum):
 	# BEGIN_YOUR_CODE (around 12-15 lines of code expected)
 	# raise Exception("Not implemented yet")
 	prefix = "sum" + name
-	if len(variables) == 0:
-		final_prefix = prefix + "final"
-		csp.add_variable(final_prefix, [0])
-		return final_prefix
+	if variables == []:
+		finalPrefix = prefix + "final"
+		csp.add_variable(finalPrefix, [0])
+		return finalPrefix
 	for i in range(len(variables)):
-		aux = prefix + str(i) + "aux"
-		csp.add_variable(aux, [(x,y) for x,y in product(range(maxSum + 1), range(maxSum + 1))])
-		csp.add_binary_potential(variables[i], aux, lambda x,y: y[1] == y[0] + x)
+		temp = prefix + str(i) + "temp"
+		values = itertools.product(range(maxSum + 1), range(maxSum + 1))
+		csp.add_variable(temp, [(a, b) for a, b in values])
+		csp.add_binary_potential(variables[i], temp, lambda x, y: y[1] == y[0] + x)
 		if i > 0:
-			csp.add_binary_potential(aux, prefix + str(i-1) + "aux", lambda x,y: x[0]== y[1])
+			csp.add_binary_potential(temp, prefix + str(i-1) + "temp", lambda x, y: x[0] == y[1])
 		else:
-			csp.add_unary_potential(aux, lambda x: x[0] == 0)
-	last_prefix = prefix + str(len(variables) - 1) + "aux"
-	final_prefix = prefix + "final"
-	csp.add_variable(final_prefix, range(maxSum + 1))
-	csp.add_binary_potential(last_prefix, final_prefix, lambda x, y: y == x[1])
-	return final_prefix
+			csp.add_unary_potential(temp, lambda x: x[0] == 0)
+	lastPrefix = prefix + str(len(variables) - 1) + "temp"
+	finalPrefix = prefix + "final"
+	csp.add_variable(finalPrefix, range(maxSum + 1))
+	csp.add_binary_potential(lastPrefix, finalPrefix, lambda x, y: y == x[1])
+	return finalPrefix
 	# END_YOUR_CODE
-
-def get_or_variable(csp, name, variables, value):
-	"""
-	Create a new variable with domain [True, False] that can only be assigned to
-	True iff at least one of the |variables| is assigned to |value|. You should
-	add any necessary intermediate variables, unary potentials, and binary
-	potentials to achieve this. Then, return the name of this variable.
-
-	@param name: Prefix of all the variables that are going to be added.
-		Can be any hashable objects. For every variable |var| added in this
-		function, it's recommended to use a naming strategy such as
-		('or', |name|, |var|) to avoid conflicts with other variable names.
-	@param variables: A list of variables in the CSP that are participating
-		in this OR function. Note that if this list is empty, then the returned
-		variable created should never be assigned to True.
-	@param value: For the returned OR variable being created to be assigned to
-		True, at least one of these variables must have this value.
-
-	@return result: The OR variable's name. This variable should have domain
-		[True, False] and constraints s.t. it's assigned to True iff at least
-		one of the |variables| is assigned to |value|.
-	"""
-
-	# BEGIN_YOUR_CODE (around 20 lines of code expected)
-	prefix = "or" + name
-	if len(variables) == 0:
-		final_prefix = prefix + "final"
-		csp.add_variable(final_prefix, [False])
-		return final_prefix
-	for i in range(len(variables)):
-		aux = prefix + str(i) + "aux"
-		csp.add_variable(aux, [(True, True), (True, False), (False, True), (False, False)])
-		csp.add_binary_potential(variables[i], aux, lambda x, y: y[1] == ((x == value) or y[0]))
-		if i > 0:
-			csp.add_binary_potential(aux, prefix + str(i-1) + "aux", lambda x, y: x[0] == y[1])
-		else:
-			csp.add_unary_potential(aux, lambda x: not x[0])
-	last_prefix = prefix + str(len(variables) - 1) + "aux"
-	final_prefix = prefix + "final"
-	csp.add_variable(final_prefix, [True, False])
-	csp.add_binary_potential(last_prefix, final_prefix, lambda x, y: y == x[1])
-	return final_prefix
 
 ############################################################
 # Problem 3.3
@@ -571,7 +523,6 @@ class SchedulingCSPConstructor():
 				semX = 0 if semX == 'Fall' else 1
 				semY = 0 if semY == 'Fall' else 1
 				flag = (semX > semY) if yearX == yearY else (yearX > yearY) 
-			print(x, y, flag)
 			return flag
 
 		for req in self.profile.requests:
@@ -579,7 +530,6 @@ class SchedulingCSPConstructor():
 				continue 
 			for cid in req.cids:
 				for preq in req.prereqs: 
-					print(csp.valNames)
 					csp.add_binary_potential(cid, preq, lambda x, y: x == None or temp(x, y))
 
 		# END_YOUR_CODE
@@ -606,7 +556,7 @@ class SchedulingCSPConstructor():
 
 		Note 2:
 		So you will have to loop over variables in the csp. But there
-		are different types of variables: courses and auxiliary variables with
+		are different types of variables: courses and tempiliary variables with
 		which you handle sums (e.g. (courseId, semester) and those added in get_sum_variable). 
 		Please check the types of the variables before you work with them.
 		
@@ -615,19 +565,18 @@ class SchedulingCSPConstructor():
 		"""
 		# BEGIN_YOUR_CODE (around 13-15 lines of code expected)
 		# raise Exception("Not implemented yet")
-		for quarter in self.profile.semesters:
-			quarter_variables = []
+		for semester in self.profile.semesters:
+			semesterVars = [] 
 			for req in self.profile.requests:
 				for cid in req.cids:
-					csp.add_variable((cid, quarter), 
-									 [0] + range(self.bulletin.courses[cid].minUnits, self.bulletin.courses[cid].maxUnits + 1))
-					quarter_variables.append((cid, quarter))
-					csp.add_binary_potential((req, quarter), (cid, quarter), 
-											 lambda x, y: y > 0 if x == cid else y == 0)
-			quarter_max_sum = get_sum_variable(csp, "quarter" + quarter, 
-											   quarter_variables, 
-											   self.profile.maxUnits)
-			csp.add_unary_potential(quarter_max_sum, lambda x: x >= self.profile.minUnits and x <= self.profile.minUnits)
+					course = self.bulletin.courses[cid]
+					csp.add_variable((cid, semester), [0] + range(course.minUnits, course.maxUnits + 1))
+					semesterVars.append((cid, semester))
+					csp.add_binary_potential(cid, (cid, semester), lambda x, y: x == y)
+ 
+			semesterMaxSum = get_sum_variable(csp, "semester" + semester, semesterVars, self.profile.maxUnits)
+			csp.add_unary_potential(semesterMaxSum, lambda x: self.profile.minUnits <= x and x <= self.profile.minUnits)
+
 		# END_YOUR_CODE
 
 	def add_all_additional_constraints(self, csp):
