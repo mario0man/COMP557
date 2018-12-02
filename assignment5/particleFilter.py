@@ -71,14 +71,12 @@ class ParticleFilter(object):
     def observe(self, agentX, agentY, observedDist):
         # BEGIN_YOUR_CODE (around 5 lines of code expected)
         # raise Exception("Not implemented yet")
-        # END_YOUR_CODE
-        # self.resample()
         for tile in self.particles:
-            x = util.colToX(tile[1])
-            y = util.rowToY(tile[0])
-            dist = math.sqrt((x - agentX) ** 2 + (y - agentY) ** 2)
-            p = util.pdf(observedDist, Const.SONAR_STD, dist) * self.particles[tile]
-            self.particles[tile] = p
+            dx = util.colToX(tile[1]) - agentX
+            dy = util.rowToY(tile[0]) - agentY
+            dist = math.pow(dx**2 + dy**2, 0.5)
+            prob = util.pdf(observedDist, Const.SONAR_STD, dist) * self.particles[tile]
+            self.particles[tile] = prob
         # END_YOUR_CODE
         self.resample()
 
@@ -99,12 +97,9 @@ class ParticleFilter(object):
         newParticles = collections.Counter()
         # BEGIN_YOUR_CODE (around 3 lines of code expected)
         # raise Exception("Not implemented yet")
-        # END_YOUR_CODE
-        # self.particles = newParticles
-        # self.updateBelief()
         for i in range(self.NUM_PARTICLES):
             tile = util.weightedRandomChoice(self.particles)
-            newParticles[tile] = newParticles[tile] + 1
+            newParticles[tile] += 1
         # END_YOUR_CODE
         self.particles = newParticles
         self.updateBelief()
@@ -127,12 +122,10 @@ class ParticleFilter(object):
         newParticles = collections.Counter()
         # BEGIN_YOUR_CODE (around 7 lines of code expected)
         # raise Exception("Not implemented yet")
-        # END_YOUR_CODE
-        # self.particles = newParticles
-        for tile in self.particles:
-            for i in range(self.particles[tile]):
+        for tile, frequency in self.particles.items():
+            for f in range(frequency):
                 newTile = util.weightedRandomChoice(self.transProbDict[tile])
-                newParticles[newTile] = newParticles[newTile] + 1
+                newParticles[newTile] += 1
         # END_YOUR_CODE
         self.particles = newParticles
       

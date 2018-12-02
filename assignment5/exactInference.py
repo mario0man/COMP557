@@ -36,15 +36,11 @@ class ExactInference(object):
     def observe(self, agentX, agentY, observedDist):
         # BEGIN_YOUR_CODE (around 5 lines of code expected)
         # raise Exception("Not implemented yet")
-        # END_YOUR_CODE
-        # self.belief.normalize()
         for row in range(self.belief.getNumRows()):
             for col in range(self.belief.getNumCols()):
-                x = util.colToX(col)
-                y = util.rowToY(row)
-                dist = math.sqrt((x - agentX) ** 2 + (y - agentY) ** 2)
-                p = util.pdf(observedDist, Const.SONAR_STD, dist) * self.belief.getProb(row, col)
-                self.belief.setProb(row, col, p)
+            	dist = math.pow((util.colToX(col) - agentX) ** 2 + (util.rowToY(row) - agentY) ** 2, 0.5)
+                prob = util.pdf(observedDist, Const.SONAR_STD, dist) * self.belief.getProb(row, col)
+                self.belief.setProb(row, col, prob)
         # END_YOUR_CODE
         self.belief.normalize()
 
@@ -62,17 +58,10 @@ class ExactInference(object):
         newBelief = util.Belief(self.belief.getNumRows(), self.belief.getNumCols(), 0)
         # BEGIN_YOUR_CODE (around 3 lines of code expected)
         # raise Exception("Not implemented yet")
-        # END_YOUR_CODE
-        # self.belief = newBelief
-        if self.skipElapse: return ### ONLY FOR THE GRADER TO USE IN Problem 1
-        newBelief = util.Belief(self.belief.getNumRows(), self.belief.getNumCols(), 0)
-        # BEGIN_YOUR_CODE (around 3 lines of code expected)
         for tiles in self.transProb:
-            oldRow = tiles[0][0]
-            oldCol = tiles[0][1]
-            newRow = tiles[1][0]
-            newCol = tiles[1][1]
-            newBelief.addProb(newRow, newCol, self.belief.getProb(oldRow, oldCol) * self.transProb[tiles])
+            (prevRow, prevCol) = (tiles[0][0], tiles[0][1])
+            (nextRow, nextCol) = (tiles[1][0], tiles[1][1])
+            newBelief.addProb(nextRow, nextCol, self.belief.getProb(prevRow, prevCol) * self.transProb[tiles])
         # END_YOUR_CODE
         self.belief = newBelief
       
